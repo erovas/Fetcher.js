@@ -100,5 +100,5 @@ document.body.appendChild(img);
 ---
 
 ### Important Note Regarding Usage
-- **Aynchronous (`Sync`):** These functions **block** the browser's main thread. Use them only in specific contexts where blocking isn't an issue (e.g., startup scripts or Node.js environments with adapters). In modern browsers, it's preferable to use the asynchronous versions.
+- **Synchronous (`Sync`):** These functions **block** the browser's main thread. Use them only in specific contexts where blocking isn't an issue (e.g., startup scripts or Node.js environments with adapters). In modern browsers, it's preferable to use the asynchronous versions.
 - **Asynchronous:** These are the recommended versions for any network operation in the user interface to keep the application running smoothly.
