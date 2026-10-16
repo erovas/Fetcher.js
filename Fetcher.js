@@ -162,4 +162,66 @@ function FetchIMG(src){
     });
 }
 
-export { FetchText, FetchCSS, FetchHTML, FetchIMG, FetchTextSync, FetchCSSSync, FetchHTMLSync, FetchIMGSync };
+/**
+ * Fetches a JSON file from a URL asynchronously and creates a plain object.
+ * @param {string} src - The URL of the JSON resource to fetch.
+ * @returns {object} Plain object
+ */
+function FetchJSONSync(src) {
+    return JSON.parse(FetchTextSync(src));
+}
+
+/**
+ * Fetches a JSON file from a URL asynchronously and creates a plain object.
+ * @param {string} src - The URL of the JSON resource to fetch.
+ * @returns {Promise<object>} A promise resolving to a plain object.
+ */
+async function FetchJSON(src) {
+    return JSON.parse(await FetchText(src));
+}
+
+/**
+ * Create a Document parsing XML text.
+ * @param {string} txt - Text to parse.
+ * @returns {Document}
+ */
+function createXML(txt){
+    const doc = new DOMParser().parseFromString(
+        txt,
+        'application/xml'
+    );
+
+    const err = doc.querySelector('parsererror');
+    
+    if (err) 
+        throw new Error(`Invalid XML: ${err.textContent}`);
+
+    return doc;
+}
+
+/**
+ * Fetches a XML file from a URL synchronously and creates a Document.
+ * @param {string} src - The URL of the XML resource to fetch.
+ * @returns {Document} Parse XML as Document.
+ */
+function FetchXMLSync(src) {
+    return createXML(FetchTextSync(src));
+}
+
+/**
+ * Fetches a XML file from a URL asynchronously and creates a Document.
+ * @param {string} src - The URL of the XML resource to fetch.
+ * @returns {Promise<Document>} A promise resolving to a Document.
+ */
+async function FetchXML(src) {
+    return createXML(await FetchText(src));
+}
+
+export { 
+    FetchText, FetchCSS, 
+    FetchHTML, FetchIMG,
+    FetchJSON, FetchXML,
+    FetchTextSync, FetchCSSSync, 
+    FetchHTMLSync, FetchIMGSync,
+    FetchJSONSync, FetchXMLSync
+};
