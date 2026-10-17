@@ -6,30 +6,36 @@
  */
 
 /**
- * Fetches text content from a URL synchronously using XMLHttpRequest.
- * @param {string} src - The URL of the resource to fetch.
- * @returns {string} The text response text if the request is successful (status 200-299 or 304).
- * @throws {Error} If the HTTP status is not in the successful range.
+ * Fetches a file from a URL synchronously.
+ * @param {string} src - The file path.
+ * @param {string} mimeType - MimeType XHR
+ * @returns File like a text
+ * @throws {Error} If the HTTP status is not successful.
  */
-function FetchTextSync(src){
+function XHRSync(src, mimeType = null){
     const xhr = new XMLHttpRequest();
     xhr.open('GET', src, false);
+    
+    if(mimeType)
+        xhr.overrideMimeType(mimeType);
+    
     xhr.send();
-    let status = xhr.status;
-    //respuesta satisfactoria (200 a 299) ó cache (304)
+    const status = xhr.status;
+
     if((status >= 200 && status < 300) || status == 304)
         return xhr.responseText;
-    
+
     throw new Error(`HTTP ${status}: ${xhr.statusText}`);
 }
 
 /**
- * Fetches text content from a URL asynchronously using XMLHttpRequest.
- * @param {string} src - The URL of the resource to fetch.
- * @returns {Promise<string>} A promise resolving to the text response text.
- * @throws {Error} A promise rejecting if the HTTP status is not in the successful range.
+ * Fetches a file from a URL asynchronously.
+ * @param {string} src - The file path.
+ * @param {string} mimeType - MimeType XHR
+ * @returns {Promise<string>} A promise resolving to the text response.
+ * @throws {Error} A promise rejecting if the HTTP status is not successful.
  */
-function FetchText(src){
+function XHR(src, mimeType = null){
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.onloadend = function(){
@@ -40,9 +46,44 @@ function FetchText(src){
             else
                 reject(new Error(`HTTP ${status}: ${xhr.statusText}`));
         }
+        
+        if(mimeType)
+            xhr.overrideMimeType(mimeType);
+
         xhr.open('GET', src, true);
         xhr.send();
     });
+}
+
+/**
+ * Fetches text content from a URL synchronously using XMLHttpRequest.
+ * @param {string} src - The URL of the resource to fetch.
+ * @returns {string} The text response text if the request is successful (status 200-299 or 304).
+ * @throws {Error} If the HTTP status is not in the successful range.
+ */
+function FetchTextSync(src){
+    return XHRSync(src);
+}
+
+/**
+ * Fetches text content from a URL asynchronously using XMLHttpRequest.
+ * @param {string} src - The URL of the resource to fetch.
+ * @returns {Promise<string>} A promise resolving to the text response text.
+ * @throws {Error} A promise rejecting if the HTTP status is not in the successful range.
+ */
+async function FetchText(src){
+    return await XHR(src);
+}
+
+/**
+ * Create a CSSStyleSheet from ext.
+ * @param {string} text
+ * @returns 
+ */
+function createCSS(text){
+    const css = new CSSStyleSheet();
+    css.replaceSync(text)
+    return css;
 }
 
 /**
@@ -52,9 +93,7 @@ function FetchText(src){
  * @throws {Error} If the underlying text fetch fails.
  */
 function FetchCSSSync(src){
-    const css = new CSSStyleSheet();
-    css.replaceSync(FetchTextSync(src))
-    return css;
+    return createCSS(XHRSync(src));
 }
 
 /**
@@ -64,9 +103,18 @@ function FetchCSSSync(src){
  * @throws {Error} A promise rejecting if the fetch fails.
  */
 async function FetchCSS(src){
-    const css = new CSSStyleSheet();
-    css.replaceSync(await FetchText(src));
-    return css;
+    return createCSS(await XHR(src));
+}
+
+/**
+ * Create a Template from text.
+ * @param {string} text 
+ * @returns 
+ */
+function createHTML(text){
+    const template = document.createElement('template');
+    template.innerHTML = text;
+    return template;
 }
 
 /**
@@ -76,9 +124,7 @@ async function FetchCSS(src){
  * @throws {Error} If the underlying text fetch fails.
  */
 function FetchHTMLSync(src){
-    const template = document.createElement('template');
-    template.innerHTML = FetchTextSync(src)
-    return template;
+    return createHTML(XHRSync(src));
 }
 
 /**
@@ -88,9 +134,7 @@ function FetchHTMLSync(src){
  * @throws {Error} A promise rejecting if the fetch fails.
  */
 async function FetchHTML(src){
-    const template = document.createElement('template');
-    template.innerHTML = await FetchText(src)
-    return template;
+    return createHTML(await XHR(src));
 }
 
 const exts = new Set(['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'png', 'gif', 'webp', 'avif', 'svg', 'apng', 'bmp', 'ico']);
@@ -151,16 +195,8 @@ function createIMG(ext, text){
  */
 function FetchIMGSync(src){
     const ext = getExtension(src);
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', src, false);
-    xhr.overrideMimeType('text/plain; charset=x-user-defined');
-    xhr.send();
-    const status = xhr.status;
-    
-    if((status >= 200 && status < 300) || status == 304)
-        return createIMG(ext, xhr.responseText);
-    
-    throw new Error(`HTTP ${status}: ${xhr.statusText}`);
+    const text = XHRSync(src, 'text/plain; charset=x-user-defined');
+    return createIMG(ext, text);
 }
 
 /**
@@ -171,21 +207,8 @@ function FetchIMGSync(src){
  */
 async function FetchIMG(src){
     const ext = getExtension(src);
-    return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.onloadend = function(){
-            const status = xhr.status;
-            //respuesta satisfactoria (200 a 299) ó cache (304)
-            if((status >= 200 && status < 300) || status == 304)
-                resolve(createIMG(ext, xhr.responseText));    
-            else
-                reject(new Error(`HTTP ${status}: ${xhr.statusText}`));
-        }
-
-        xhr.overrideMimeType('text/plain; charset=x-user-defined');
-        xhr.open('GET', src, true);
-        xhr.send();
-    });
+    const text = await XHR(src, 'text/plain; charset=x-user-defined');
+    return createIMG(ext, text);
 }
 
 /**
@@ -194,7 +217,7 @@ async function FetchIMG(src){
  * @returns {object} Plain object
  */
 function FetchJSONSync(src) {
-    return JSON.parse(FetchTextSync(src));
+    return JSON.parse(XHRSync(src));
 }
 
 /**
@@ -203,7 +226,7 @@ function FetchJSONSync(src) {
  * @returns {Promise<object>} A promise resolving to a plain object.
  */
 async function FetchJSON(src) {
-    return JSON.parse(await FetchText(src));
+    return JSON.parse(await XHR(src));
 }
 
 /**
@@ -231,7 +254,7 @@ function createXML(txt){
  * @returns {Document} Parse XML as Document.
  */
 function FetchXMLSync(src) {
-    return createXML(FetchTextSync(src));
+    return createXML(XHRSync(src));
 }
 
 /**
@@ -240,7 +263,7 @@ function FetchXMLSync(src) {
  * @returns {Promise<Document>} A promise resolving to a Document.
  */
 async function FetchXML(src) {
-    return createXML(await FetchText(src));
+    return createXML(await XHR(src));
 }
 
 export { 
